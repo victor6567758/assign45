@@ -1,8 +1,12 @@
 package org.luxoft.assignments;
 
+import java.util.function.Supplier;
 import java.util.stream.Stream;
+import lombok.Getter;
 
 public class Solution {
+
+  private int bombs;
 
   static class Node {
 
@@ -18,6 +22,7 @@ public class Solution {
   }
 
 
+  @Getter
   private enum CellType {
     P(-1),
     E(0),
@@ -29,16 +34,13 @@ public class Solution {
       this.type = type;
     }
 
-    public int getType() {
-      return type;
-    }
-
   }
 
   public void solve() {
     int priceIdx = 4;
     Node root = generateTree(priceIdx, 0, 8);
 
+    bombs = 0;
     CellType[] buffer = new CellType[8];
     traversal(priceIdx, root, buffer);
 
@@ -68,7 +70,9 @@ public class Solution {
 
     if (prizeIdx != node.val) {
       buffer[node.val] = CellType.B;
-      if (!checkConditionsPassed(buffer, node.val)) {
+      bombs++;
+      if (!checkConditionsPassed(prizeIdx, buffer, node.val)) {
+        bombs--;
         return;
       }
 
@@ -77,9 +81,10 @@ public class Solution {
         print(buffer, node.val);
       }
       traversal(prizeIdx, node.left, buffer);
+      bombs--;
 
       buffer[node.val] = CellType.E;
-      if (!checkConditionsPassed(buffer, node.val)) {
+      if (!checkConditionsPassed(prizeIdx, buffer, node.val)) {
         return;
       }
 
@@ -91,7 +96,7 @@ public class Solution {
     } else {
       buffer[node.val] = CellType.P;
 
-      if (!checkConditionsPassed(buffer, node.val)) {
+      if (!checkConditionsPassed(prizeIdx, buffer, node.val)) {
         return;
       }
 
@@ -100,60 +105,44 @@ public class Solution {
       }
 
       traversal(prizeIdx, node.left, buffer);
-
     }
 
   }
 
-  private boolean checkConditionsPassed(CellType[] buffer, int level) {
+  private boolean passedRule(Supplier<Boolean> ruleSupplier, CellType cellType) {
+    return switch (cellType) {
+      case B -> !ruleSupplier.get();
+      case P -> ruleSupplier.get();
+      case E -> true;
+    };
+  }
 
-    if (level == 1) {
-      // The prize is not here.
+  private boolean checkConditionsPassed(int prizeIdx, CellType[] buffer, int level) {
 
-      boolean passed = switch (buffer[0]) {
-        case B -> !rule2(buffer, level);
-        case P -> rule2(buffer, level);
-        case E -> true;
-      };
+    CellType curCellType = buffer[level];
 
-      return passed;
-
+    if (level == 0) {
+      // Here is a bomb and label 3 is false
+      return true;
     }
 
-    if (level == 3) {
-      boolean passed = switch (buffer[0]) {
-        case B -> !(rule1(buffer, level) && rule3(buffer, level));
-        case P -> rule1(buffer, level) && rule3(buffer, level);
-        case E -> true;
-      };
-
-      return passed;
-    }
-
-//    boolean passed = switch (buffer[0]) {
-//      case B -> !rule1(buffer, level);
-//      case P -> rule1(buffer, level);
-//      case E -> true;
-//    };
-//
-//    if (passed) {
-//      passed = switch (buffer[1]) {
-//        case B -> !rule2(buffer, level);
-//        case P -> rule2(buffer, level);
-//        case E -> true;
-//      };
-//    } else {
-//      return false;
+//    if (level == 1) {
+//      // The prize is not here.
+//      return passedRule(() -> buffer[1] != CellType.P, curCellType);
 //    }
 //
-//    if (passed) {
-//      passed = switch (buffer[2]) {
-//        case B -> !rule3(buffer, level);
-//        case P -> rule3(buffer, level);
-//        case E -> true;
-//      };
-//    } else {
-//      return false;
+//    if (level == 2) {
+//      // Label 2 is true and the prize is in room 1
+//      // Here is a bomb and label 3 is false.
+//      Supplier<Boolean> cond3 = () -> buffer[1] != CellType.P && buffer[0] == CellType.P;
+//      Supplier<Boolean> cond1 = () -> buffer[0] != CellType.B && !cond3.get();
+//
+//      return passedRule(() -> cond1.get() && cond3.get(), curCellType);
+//    }
+//
+//    if (level == 3) {
+//      //The prize is in an odd room if room 2 is empty.
+//      return passedRule(() -> buffer[1] == CellType.E && prizeIdx % 2 == 0, curCellType);
 //    }
 
     return true;
@@ -166,7 +155,7 @@ public class Solution {
       r.append(buffer[i]);
     }
 
-    System.out.println(r);
+    System.out.println(r + ", bombs: " + bombs);
   }
 
   private long countEmptyRooms(CellType[] buffer, int level) {
