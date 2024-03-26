@@ -146,9 +146,9 @@ public class Solution {
   }
 
   private void print(CellType[] buffer, int level) {
-    if (level != 7) {
-      return;
-    }
+//    if (level != 7) {
+//      return;
+//    }
 
     StringBuilder r = new StringBuilder();
     for (int i = 0; i <= level; i++) {
