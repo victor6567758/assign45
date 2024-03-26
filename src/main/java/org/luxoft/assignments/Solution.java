@@ -134,12 +134,26 @@ public class Solution {
       //The prize is in an odd room if room 2 is empty.
       return passedRule(() -> buffer[1] == CellType.E && prizeIdx % 2 == 0, curCellType);
     }
-
-    if (level == 4) {
-      // 3 rooms are empty.
-      int emptyRooms = 8 - bombs - 1;
-      return passedRule(() -> emptyRooms == 3, curCellType);
-    }
+//
+//    if (level == 4) {
+//      return true;
+//    }
+//
+//    if (level == 5) {
+//      return true;
+//    }
+//
+//    if (level == 6) {
+//      // Room 6 is not empty
+//      return passedRule(() -> buffer[5] != CellType.E, curCellType);
+//    }
+//
+//    if (level == 7) {
+//      // The prize is in room 7
+//      // There are 5 bombs in the 8 rooms.
+//      // 3 rooms are empty.
+//      return passedRule(() -> buffer[6] == CellType.P && bombs == 5, curCellType);
+//    }
 
     return true;
 
