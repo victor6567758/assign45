@@ -72,38 +72,28 @@ public class Solution {
       buffer[node.val] = CellType.B;
       bombs++;
       if (!checkConditionsPassed(prizeIdx, buffer, node.val)) {
-        bombs--;
-        return;
+        node.left = null;
       }
 
-
-      if (node.val == 7) {
-        print(buffer, node.val);
-      }
+      print(buffer, node.val);
       traversal(prizeIdx, node.left, buffer);
       bombs--;
 
       buffer[node.val] = CellType.E;
       if (!checkConditionsPassed(prizeIdx, buffer, node.val)) {
-        return;
+        node.right = null;
       }
-
-      if (node.val == 7) {
-        print(buffer, node.val);
-      }
+      print(buffer, node.val);
       traversal(prizeIdx, node.right, buffer);
 
     } else {
       buffer[node.val] = CellType.P;
 
       if (!checkConditionsPassed(prizeIdx, buffer, node.val)) {
-        return;
+        node.left = null;
       }
 
-      if (node.val == 7) {
-        print(buffer, node.val);
-      }
-
+      print(buffer, node.val);
       traversal(prizeIdx, node.left, buffer);
     }
 
@@ -126,36 +116,46 @@ public class Solution {
       return true;
     }
 
-//    if (level == 1) {
-//      // The prize is not here.
-//      return passedRule(() -> buffer[1] != CellType.P, curCellType);
-//    }
-//
-//    if (level == 2) {
-//      // Label 2 is true and the prize is in room 1
-//      // Here is a bomb and label 3 is false.
-//      Supplier<Boolean> cond3 = () -> buffer[1] != CellType.P && buffer[0] == CellType.P;
-//      Supplier<Boolean> cond1 = () -> buffer[0] != CellType.B && !cond3.get();
-//
-//      return passedRule(() -> cond1.get() && cond3.get(), curCellType);
-//    }
-//
-//    if (level == 3) {
-//      //The prize is in an odd room if room 2 is empty.
-//      return passedRule(() -> buffer[1] == CellType.E && prizeIdx % 2 == 0, curCellType);
-//    }
+    if (level == 1) {
+      // The prize is not here.
+      return passedRule(() -> curCellType != CellType.P, curCellType);
+    }
+
+    if (level == 2) {
+      // Label 2 is true and the prize is in room 1
+      // Here is a bomb and label 3 is false.
+      Supplier<Boolean> cond3 = () -> buffer[1] != CellType.P && buffer[0] == CellType.P;
+      Supplier<Boolean> cond1 = () -> buffer[0] != CellType.B && !cond3.get();
+
+      return passedRule(() -> cond1.get() && cond3.get(), curCellType);
+    }
+
+    if (level == 3) {
+      //The prize is in an odd room if room 2 is empty.
+      return passedRule(() -> buffer[1] == CellType.E && prizeIdx % 2 == 0, curCellType);
+    }
+
+    if (level == 4) {
+      // 3 rooms are empty.
+      int emptyRooms = 8 - bombs - 1;
+      return passedRule(() -> emptyRooms == 3, curCellType);
+    }
 
     return true;
 
   }
 
   private void print(CellType[] buffer, int level) {
+    if (level != 7) {
+      return;
+    }
+
     StringBuilder r = new StringBuilder();
     for (int i = 0; i <= level; i++) {
       r.append(buffer[i]);
     }
 
-    System.out.println(r + ", bombs: " + bombs);
+    System.out.println(r + ", bombs: " + bombs + ", empty: " + (8 - 1 - bombs) + ", level: " + level);
   }
 
   private long countEmptyRooms(CellType[] buffer, int level) {
