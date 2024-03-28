@@ -1,28 +1,53 @@
 package org.luxoft.assignments;
 
-import java.util.function.Supplier;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
 
 public class Solution {
 
-  private static int ROOMS = 8;
+  private static final int ROOMS = 8;
 
   private int bombs;
 
-  static class Node {
+  private int prizeIdx;
 
-    Node left;
-    Node right;
+  // The prize is not here.
+  private final Function<CellType[], Boolean> cond2 = (CellType[] buffer) -> buffer[1]
+      != CellType.P;
 
-    Node(int val) {
-      this.val = val;
-    }
+  // Label 2 is true and the prize is in room 1
+  private final Function<CellType[], Boolean> cond3 = (CellType[] buffer) -> cond2.apply(buffer)
+      && buffer[0] == CellType.P;
 
-    int val;
-  }
+  // Here is a bomb and label 3 is false.
+  private final Function<CellType[], Boolean> cond1 = (CellType[] buffer) -> buffer[0] == CellType.B
+      && !cond3.apply(buffer);
+
+  // The prize is in an odd room if room 2 is empty.
+  private final Function<CellType[], Boolean> cond4 = (CellType[] buffer) -> buffer[1] == CellType.E
+      && prizeIdx % 2 == 0;
+
+  // 3 rooms are empty.
+  private final Function<CellType[], Boolean> cond5 = (CellType[] buffer) -> ROOMS - 1 - bombs == 3;
+
+  // There are 5 bombs in the 8 rooms.
+  private final Function<CellType[], Boolean> cond6 = (CellType[] buffer) -> bombs == 5;
+
+  // Room 6 is not empty.
+  private final Function<CellType[], Boolean> cond7 = (CellType[] buffer) -> buffer[5]
+      != CellType.E;
+
+  // The prize is in room 7
+  private final Function<CellType[], Boolean> cond8 = (CellType[] buffer) -> buffer[6]
+      == CellType.P;
 
 
   @Getter
+  @RequiredArgsConstructor
   private enum CellType {
     P(-1),
     E(0),
@@ -30,143 +55,81 @@ public class Solution {
 
     private final int type;
 
-    CellType(int type) {
-      this.type = type;
-    }
-
   }
 
   public void solve() {
-    for (int i = 0; i < ROOMS; i++ ) {
-      solveForPrize(i);
+    for (prizeIdx = 0; prizeIdx < ROOMS; prizeIdx++) {
+      solveForPrize();
     }
   }
 
-  private void solveForPrize(int prizeIdx) {
-    Node root = generateTree(prizeIdx, 0, ROOMS);
+  private void solveForPrize() {
 
     bombs = 0;
     CellType[] buffer = new CellType[ROOMS];
-    backtrace(prizeIdx, root, buffer);
+    buffer[prizeIdx] = CellType.P;
+    backtrace(0, buffer);
   }
 
-  private Node generateTree(int prizeIdx, int level, int depth) {
 
-    Node newNode = new Node(level);
-    if (depth == 1) {
-      return newNode;
-    }
+  private void backtrace(int level, CellType[] buffer) {
 
-    if (prizeIdx != level) {
-      newNode.left = generateTree(prizeIdx, level + 1, depth - 1);
-      newNode.right = generateTree(prizeIdx, level + 1, depth - 1);
-    } else {
-      newNode.left = generateTree(prizeIdx, level + 1, depth - 1);
-    }
-    return newNode;
-  }
-
-  private void backtrace(int prizeIdx, Node node, CellType[] buffer) {
-    if (node == null) {
+    if (!checkConditionsPassed(buffer, level)) {
       return;
     }
 
-    if (prizeIdx != node.val) {
-      buffer[node.val] = CellType.B;
+    if (level == buffer.length) {
+      print(buffer);
+      return;
+    }
+
+    if (prizeIdx != level) {
+      buffer[level] = CellType.E;
+      backtrace(level + 1, buffer);
+
+      buffer[level] = CellType.B;
       bombs++;
-      if (!checkConditionsPassed(prizeIdx, buffer, node.val)) {
-        node.left = null;
-      }
-
-      backtrace(prizeIdx, node.left, buffer);
+      backtrace(level + 1, buffer);
       bombs--;
-
-      buffer[node.val] = CellType.E;
-      if (!checkConditionsPassed(prizeIdx, buffer, node.val)) {
-        node.right = null;
-      }
-      backtrace(prizeIdx, node.right, buffer);
-
     } else {
-      buffer[node.val] = CellType.P;
-
-      if (!checkConditionsPassed(prizeIdx, buffer, node.val)) {
-        node.left = null;
-      }
-
-      backtrace(prizeIdx, node.left, buffer);
+      backtrace(level + 1, buffer);
     }
 
   }
 
-  private boolean passedRule(Supplier<Boolean> ruleSupplier, CellType cellType) {
-    return switch (cellType) {
-      case B -> !ruleSupplier.get();
-      case P -> ruleSupplier.get();
+  private boolean passedRule(Function<CellType[], Boolean> ruleSupplier, CellType[] buffer,
+      int roomIdx) {
+    if (buffer[roomIdx] == null) {
+      throw new IllegalArgumentException();
+    }
+
+    return switch (buffer[roomIdx]) {
+      case B -> !ruleSupplier.apply(buffer);
+      case P -> ruleSupplier.apply(buffer);
       case E -> true;
     };
   }
 
-  private boolean checkConditionsPassed(int prizeIdx, CellType[] buffer, int level) {
+  private boolean checkConditionsPassed(CellType[] buffer, int level) {
 
-    // The prize is not here.
-    Supplier<Boolean> cond2 = () -> buffer[1] != CellType.P;
-
-    // Label 2 is true and the prize is in room 1
-    Supplier<Boolean> cond3 = () -> cond2.get() && buffer[0] == CellType.P;
-
-    // Here is a bomb and label 3 is false.
-    Supplier<Boolean> cond1 = () -> buffer[0] == CellType.B && !cond3.get();
-
-    // The prize is in an odd room if room 2 is empty.
-    Supplier<Boolean> cond4 = () -> buffer[1] == CellType.E && prizeIdx % 2 == 0;
-
-    // 3 rooms are empty.
-    int emptyRooms = 8 - 1 - bombs;
-    Supplier<Boolean> cond5 = () -> emptyRooms == 3;
-
-    // There are 5 bombs in the 8 rooms.
-    Supplier<Boolean> cond6 = () -> bombs == 5;
-
-    // Room 6 is not empty.
-    Supplier<Boolean> cond7 = () -> buffer[5] != CellType.E;
-
-    // The prize is in room 7
-    Supplier<Boolean> cond8 = () -> buffer[6] == CellType.P;
-
+    // level is the next we test
     if (level == 4) {
-      return passedRule(cond4, buffer[3]);
+      return passedRule(cond4, buffer, 3);
     }
 
-    if (level == 2) {
-      boolean label1Passed = passedRule(() -> cond1.get(), buffer[0]);
-
-      boolean label2Passed = passedRule(cond2, buffer[1]);
-
-      boolean label3Passed = passedRule(() -> cond3.get(), buffer[2]);
-
-      return label1Passed && label2Passed && label3Passed;
-    }
-
-    if (level == 6) {
-      return passedRule(cond7, buffer[6]);
+    if (level == 3) {
+      return passedRule(cond1, buffer, 0) && passedRule(cond2, buffer, 1) && passedRule(cond3,
+          buffer, 2);
     }
 
     if (level == 7) {
+      return passedRule(cond7, buffer, 6);
+    }
 
-      boolean label5Passed = passedRule(cond5, buffer[4]);
+    if (level == 8) {
 
-      boolean label6Passed = passedRule(cond6, buffer[5]);
-
-      boolean label8Passed = passedRule(cond8, buffer[7]);
-
-      boolean result = label5Passed && label6Passed && label8Passed;
-
-      if (result) {
-        print(buffer, level);
-      }
-
-      return result;
+      return passedRule(cond5, buffer, 4) && passedRule(cond6, buffer, 5) && passedRule(cond8,
+          buffer, 7);
     }
 
     return true;
@@ -174,15 +137,7 @@ public class Solution {
   }
 
 
-  private void print(CellType[] buffer, int level) {
-
-    StringBuilder r = new StringBuilder();
-    for (int i = 0; i <= level; i++) {
-      r.append(buffer[i]);
-    }
-
-    System.out.println(
-        r + ", bombs: " + bombs + ", empty: " + (8 - 1 - bombs) + ", level: " + level);
+  private void print(CellType[] buffer) {
+    System.out.println(Stream.of(buffer).map(Enum::toString).collect(Collectors.joining("")));
   }
-
 }
