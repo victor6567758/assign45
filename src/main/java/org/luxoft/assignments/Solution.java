@@ -40,7 +40,6 @@ public class Solution {
     for (int i = 0; i < ROOMS; i++ ) {
       solveForPrize(i);
     }
-
   }
 
   private void solveForPrize(int prizeIdx) {
