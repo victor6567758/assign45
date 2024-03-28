@@ -64,7 +64,6 @@ public class Solution {
   }
 
   private void solveForPrize() {
-
     bombs = 0;
     CellType[] buffer = new CellType[ROOMS];
     buffer[prizeIdx] = CellType.P;
@@ -74,7 +73,7 @@ public class Solution {
 
   private void backtrace(int level, CellType[] buffer) {
 
-    if (!checkConditionsPassed(buffer, level)) {
+    if (level > 0 && !checkConditionsPassed(buffer, level)) {
       return;
     }
 
@@ -112,27 +111,18 @@ public class Solution {
 
   private boolean checkConditionsPassed(CellType[] buffer, int level) {
 
-    // level is the next we test
-    if (level == 4) {
-      return passedRule(cond4, buffer, 3);
-    }
-
-    if (level == 3) {
-      return passedRule(cond1, buffer, 0) && passedRule(cond2, buffer, 1) && passedRule(cond3,
+    boolean result = switch(level) {
+      case 1, 2, 5, 6 -> true;
+      case 3 -> passedRule(cond1, buffer, 0) && passedRule(cond2, buffer, 1) && passedRule(cond3,
           buffer, 2);
-    }
-
-    if (level == 7) {
-      return passedRule(cond7, buffer, 6);
-    }
-
-    if (level == 8) {
-
-      return passedRule(cond5, buffer, 4) && passedRule(cond6, buffer, 5) && passedRule(cond8,
+      case 4 -> passedRule(cond4, buffer, 3);
+      case 7 -> passedRule(cond7, buffer, 6);
+      case 8 -> passedRule(cond5, buffer, 4) && passedRule(cond6, buffer, 5) && passedRule(cond8,
           buffer, 7);
-    }
+      default -> throw new IllegalArgumentException();
+    };
 
-    return true;
+    return result;
 
   }
 
