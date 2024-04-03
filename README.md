@@ -6,5 +6,6 @@
     * We can apply our filtering criteria as early as possible to avoid additional calculations
 3. Other alternatives:
    * Mix of analytical approach
-   * Use the languages like Prolog to numerically make the same as in (1)
-   
+   * Use the languages like Prolog to numerically make the same as in (1) - see prolog/solution.pl
+      
+     ![img.png](img.png)
